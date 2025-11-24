@@ -1,6 +1,6 @@
 spring:
   application:
-    name: store
+    name: spring-api-with-krd-starters
 
   jwt:
     secret: ${JWT_SECRET}
