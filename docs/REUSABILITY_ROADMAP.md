@@ -63,11 +63,11 @@ Create a common library you import and wire up manually.
 #### 1. JWT Authentication System (95% Reusable) 🔥
 
 **Files to Extract:**
-- `src/main/java/com/codewithmosh/store/auth/JwtService.java`
-- `src/main/java/com/codewithmosh/store/auth/JwtConfig.java`
-- `src/main/java/com/codewithmosh/store/auth/JwtAuthenticationFilter.java`
-- `src/main/java/com/codewithmosh/store/auth/Jwt.java`
-- `src/main/java/com/codewithmosh/store/auth/SecurityConfig.java` (base)
+- `src/main/java/com/krd/store/auth/JwtService.java`
+- `src/main/java/com/krd/store/auth/JwtConfig.java`
+- `src/main/java/com/krd/store/auth/JwtAuthenticationFilter.java`
+- `src/main/java/com/krd/store/auth/Jwt.java`
+- `src/main/java/com/krd/store/auth/SecurityConfig.java` (base)
 
 **Why This is Priority #1:**
 - Used in every API project
@@ -113,7 +113,7 @@ That's it! JWT authentication fully configured.
 #### 2. Modular Security Rules Pattern (100% Reusable)
 
 **Files to Extract:**
-- `src/main/java/com/codewithmosh/store/common/SecurityRules.java`
+- `src/main/java/com/krd/store/common/SecurityRules.java`
 - All `*SecurityRules.java` implementations as examples
 
 **Current Implementation:**
@@ -171,15 +171,15 @@ public class SecurityConfig {
 #### 3. Payment Gateway Pattern (95% Reusable)
 
 **Files to Extract:**
-- `src/main/java/com/codewithmosh/store/payments/PaymentGateway.java`
-- `src/main/java/com/codewithmosh/store/payments/StripePaymentGateway.java`
-- `src/main/java/com/codewithmosh/store/payments/CheckoutSession.java`
-- `src/main/java/com/codewithmosh/store/payments/CheckoutResponse.java`
-- `src/main/java/com/codewithmosh/store/payments/CheckoutRequest.java`
-- `src/main/java/com/codewithmosh/store/payments/WebhookRequest.java`
-- `src/main/java/com/codewithmosh/store/payments/PaymentResult.java`
-- `src/main/java/com/codewithmosh/store/payments/PaymentStauts.java` (note: has typo)
-- `src/main/java/com/codewithmosh/store/payments/StripeConfig.java`
+- `src/main/java/com/krd/store/payments/PaymentGateway.java`
+- `src/main/java/com/krd/store/payments/StripePaymentGateway.java`
+- `src/main/java/com/krd/store/payments/CheckoutSession.java`
+- `src/main/java/com/krd/store/payments/CheckoutResponse.java`
+- `src/main/java/com/krd/store/payments/CheckoutRequest.java`
+- `src/main/java/com/krd/store/payments/WebhookRequest.java`
+- `src/main/java/com/krd/store/payments/PaymentResult.java`
+- `src/main/java/com/krd/store/payments/PaymentStauts.java` (note: has typo)
+- `src/main/java/com/krd/store/payments/StripeConfig.java`
 
 **Interface Pattern (Strategy Pattern):**
 ```java
@@ -233,7 +233,7 @@ public class CheckoutService {
 #### 4. Exception Handling Architecture (70% Reusable)
 
 **Current Files:**
-- `src/main/java/com/codewithmosh/store/common/GlobalExceptionHandler.java`
+- `src/main/java/com/krd/store/common/GlobalExceptionHandler.java`
 - Various domain exceptions
 
 **Recommended Enhancement:**

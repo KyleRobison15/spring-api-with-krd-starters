@@ -16,7 +16,7 @@ plugins {
 	id 'org.flywaydb.flyway' version '10.15.0'
 }
 
-group = 'com.codewithmosh'
+group = 'com.krd'
 version = '1.0.0'
 
 java {
