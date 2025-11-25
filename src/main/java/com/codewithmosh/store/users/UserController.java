@@ -5,7 +5,6 @@ import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -22,6 +21,7 @@ public class UserController {
     private final UserService userService;
 
     @GetMapping
+    @PreAuthorize("hasRole('ADMIN')") // Endpoint is only accessible by users with "ADMIN" role
     public Iterable<UserDto> getAllUsers(@RequestParam(required = false, defaultValue = "", name = "sort") String sort) {
         return userService.getAllUsers(sort);
     }
@@ -98,11 +98,13 @@ public class UserController {
 
     /**
      * Get all roles for a specific user.
+     * Only accessible by Admins
      *
      * @param id The user ID
      * @return Set of role strings (e.g., ["USER", "ADMIN"])
      */
     @GetMapping("/{id}/roles")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Set<String>> getUserRoles(@PathVariable Long id) {
         var user = userService.getUser(id);
         return ResponseEntity.ok(user.getRoles());
@@ -121,11 +123,6 @@ public class UserController {
     @ExceptionHandler(DuplicateUserException.class)
     public ResponseEntity<?> handleDuplicateUserException(DuplicateUserException e) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", e.getMessage()));
-    }
-
-    @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<Void> handleAccessDenied() {
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
     }
 
 }
