@@ -43,13 +43,15 @@ public class UserController {
     }
 
     @PutMapping("/{id}")
-    public UserDto updateUser(@PathVariable(name = "id") Long id, @RequestBody UpdateUserRequest request) {
+    public UserDto updateUser(@PathVariable(name = "id") Long id, @Valid @RequestBody UpdateUserRequest request) {
         return userService.updateUser(id, request);
     }
 
     @DeleteMapping("/{id}")
-    public void deleteUser(@PathVariable Long id) {
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
         userService.deleteUser(id);
+        return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/{id}/change-password")
