@@ -1,471 +1,586 @@
-# Spring Store API - Project Documentation
+# Claude Development Guide for Spring API with KRD Starters
+
+This document provides comprehensive information about the Spring API with KRD Starters project to help Claude (and developers) understand the codebase, development practices, and how to make effective contributions.
 
 ## Project Overview
 
-This is a full-featured e-commerce REST API built with Spring Boot. It provides complete backend functionality for an online store including user authentication, product catalog, shopping cart, order management, and payment processing via Stripe.
+This is a Spring Boot REST API application demonstrating enterprise-grade authentication, authorization, and user management. The project showcases:
 
-**Technology Stack:**
+- Custom Spring Boot Starters for reusable security components
+- JWT-based authentication with dual-token system (access + refresh)
+- Role-based access control (RBAC) with USER and ADMIN roles
+- Comprehensive user management with security best practices
+- Password security with configuration-based validation
+- Soft delete pattern for data preservation
+- Audit logging for security-sensitive operations
+- Stripe payment integration
+- Flyway database migrations
+
+## Technology Stack
+
+**Backend Framework:**
 - Spring Boot 3.4.5
 - Java 21
-- Maven (migrating to Gradle - see `gradle-migration` branch)
-- MySQL database
-- Flyway for database migrations
-- JWT authentication (dual-token system)
-- Stripe payment integration
-- MapStruct for DTO mapping
-- Swagger/OpenAPI for API documentation
+- Gradle (multi-module build)
 
-## Project Architecture
+**Security:**
+- Spring Security 6.x
+- JWT (JSON Web Tokens) for stateless authentication
+- BCrypt password hashing
+- Custom security starters (jwt-auth-starter, security-rules-starter)
 
-### Directory Structure
+**Database:**
+- MySQL (production)
+- Flyway for version-controlled migrations
+- Spring Data JPA with Hibernate
 
+**Validation & Mapping:**
+- Jakarta Bean Validation (formerly javax.validation)
+- MapStruct for DTO-Entity mapping
+- Custom validation annotations
+
+**Documentation:**
+- Swagger/OpenAPI 3 (Springdoc)
+
+**Payment Processing:**
+- Stripe API integration
+
+**Testing:**
+- JUnit 5
+- Spring Boot Test
+
+## Repository Structure
+
+This project is part of a multi-repository setup:
+
+1. **krd-spring-starters** - Custom Spring Boot starters
+   - `jwt-auth-starter` (v1.0.0) - JWT authentication infrastructure
+   - `security-rules-starter` (v1.0.0) - Modular security configuration
+
+2. **spring-api-with-krd-starters** - Main application (this repository)
+   - Uses the custom starters
+   - Implements business logic and REST APIs
+
+## Development Workflow
+
+### Branching Strategy
+
+This project follows a feature branch workflow:
+
+1. **Main Branch (`main`)**
+   - Production-ready code
+   - All features must be tested before merging
+   - Protected branch (typically)
+
+2. **Feature Branches**
+   - Created for major changes, new features, or significant refactoring
+   - Naming convention: `feature/<descriptive-name>`
+     - Example: `feature/security-rules-starter`
+     - Example: `feature/password-security-enhancements`
+     - Example: `feature/soft-delete-users`
+
+3. **Branch Lifecycle**
+   - Create feature branch from `main`
+   - Make changes with descriptive commits
+   - Test thoroughly
+   - Merge to `main` when complete
+   - Push to GitHub
+
+### Commit Guidelines
+
+Make descriptive commits at logical stopping points:
+
+**Good commit practices:**
+- Commits should describe WHAT changed and WHY
+- Group related changes together
+- Commit after completing a coherent unit of work
+- Use present tense ("Add feature" not "Added feature")
+
+**Examples from this project:**
 ```
-src/main/java/com/codewithmosh/store/
-├── auth/                # JWT authentication & security
-│   ├── JwtService.java             # Token generation & validation
-│   ├── JwtAuthenticationFilter.java # Request authentication filter
-│   ├── SecurityConfig.java         # Spring Security configuration
-│   └── AuthController.java         # Login, refresh, /me endpoints
-├── users/               # User management
-├── products/            # Product catalog
-│   ├── Product.java
-│   ├── Category.java
-│   └── ProductController.java
-├── carts/               # Shopping cart functionality
-│   ├── Cart.java
-│   ├── CartItem.java
-│   └── CartController.java
-├── orders/              # Order management
-│   ├── Order.java
-│   ├── OrderItem.java
-│   └── OrderController.java
-├── payments/            # Stripe payment processing
-│   ├── CheckoutController.java     # Checkout & webhook endpoints
-│   ├── CheckoutService.java
-│   ├── StripePaymentGateway.java   # Stripe API integration
-│   └── PaymentSecurityRules.java
-├── common/              # Shared utilities
-│   └── SecurityRules.java          # Security rules interface
-└── admin/               # Admin functionality
-
-src/main/resources/
-├── application.yaml              # Main configuration
-├── application-dev.yaml          # Dev environment config
-├── application-prod.yaml         # Production config
-└── db/migration/                 # Flyway migrations
-    ├── V1__initial_migration.sql
-    ├── V2__create_carts_table.sql
-    ├── V3__add_role_to_users.sql
-    ├── V4__create_orders_tables.sql
-    └── V5__populate_database.sql
-```
-
-### Key Design Patterns
-
-- **Layered Architecture**: Controller → Service → Repository separation
-- **DTO Pattern**: MapStruct for entity-to-DTO conversions
-- **Modular Security**: Each domain module defines its own security rules via `SecurityRules` interface
-- **Dependency Injection**: Constructor-based injection with Lombok's `@AllArgsConstructor`
-- **Filter Chain**: JWT authentication via `OncePerRequestFilter`
-
-## Database (MySQL)
-
-### Connection Configuration
-- **Database**: `store_api` (auto-created if not exists)
-- **Host**: `localhost:3306`
-- **Config location**: `src/main/resources/application-dev.yaml:3-7`
-
-**SECURITY WARNING**: Database password is currently hardcoded in `application-dev.yaml` - should be moved to environment variables.
-
-### Flyway Migrations
-
-Migrations run automatically on startup. Current schema version: V5
-
-1. **V1**: Initial schema (users, products, categories)
-2. **V2**: Shopping cart tables
-3. **V3**: User roles column
-4. **V4**: Order and order_items tables
-5. **V5**: Database seed data
-
-### Creating New Migrations
-
-Create a new file: `src/main/resources/db/migration/V{N}__description.sql` where N is the next version number.
-
-## JWT Authentication (Dual-Token System)
-
-### Authentication Flow
-
-**1. Login** (`POST /auth/login`)
-- User sends email/password
-- Server returns:
-  - **Access token** in response body (15 min expiration)
-  - **Refresh token** in HttpOnly cookie (7 day expiration)
-
-**2. API Requests**
-- Client includes `Authorization: Bearer <access-token>` header
-- `JwtAuthenticationFilter` intercepts every request
-- Token is validated and user context is set in Spring Security
-
-**3. Token Refresh** (`POST /auth/refresh`)
-- Refresh token automatically sent via cookie
-- Returns new access token
-- Refresh token remains valid
-
-### JWT Token Structure
-
-**Access Token Claims** (JwtService.java:29-36):
-```json
-{
-  "sub": "userId",
-  "email": "user@example.com",
-  "name": "User Name",
-  "role": "CUSTOMER|ADMIN",
-  "iat": 1234567890,
-  "exp": 1234568790
-}
+Add robust security and validation to user management endpoints
+- Add authorization checks to PUT /users/{id} (self or admin)
+- Add authorization checks to DELETE /users/{id} (admin only)
+- Add email/username uniqueness validation on update
+- Prevent self-deletion by admins
+- Prevent deletion of last admin user
+- Add countByRolesContaining to UserRepository
 ```
 
-### Security Features
+```
+Implement soft delete for user management
+- Add deletedAt timestamp field to User entity
+- Create Flyway migration V9 for deleted_at column with index
+- Override JPA repository methods to filter soft-deleted users
+- Update deleteUser to set deletedAt and disable account
+- Preserve data for audit and compliance requirements
+```
 
-- **HttpOnly Cookies**: Refresh tokens stored in HttpOnly cookies (cannot be accessed by JavaScript - XSS protection)
-- **Path Restriction**: Refresh token cookie only sent to `/auth/refresh`
-- **Secure Flag**: Cookies only transmitted over HTTPS
-- **BCrypt Password Hashing**: Passwords never stored in plaintext
-- **Stateless Sessions**: No server-side session storage
-- **Short-lived Access Tokens**: 15 minutes (limits damage from token theft)
-- **Long-lived Refresh Tokens**: 7 days (better UX)
+```
+Fix critical security vulnerabilities in change password endpoint
+- Add authorization check (users can only change own password)
+- Add password confirmation validation
+- Fix CRITICAL bug: Hash password before storing (was storing plaintext!)
+- Improve error messages for better UX
+- Add @Valid annotation to controller endpoint
+```
 
-### JWT Configuration
+## Key Components
 
-**Environment Variables Required**:
-- `JWT_SECRET`: Secret key for signing tokens (application.yaml:6)
+### 1. Authentication System
 
-**Token Expiration** (application.yaml:8-14):
-- Access Token: 900 seconds (15 minutes)
-- Refresh Token: 604800 seconds (7 days)
+**Location:** `com.codewithmosh.store.auth`
 
-## Security Configuration
+**How it works:**
+- Users authenticate with email/password
+- Server issues two JWT tokens:
+  - **Access Token**: Short-lived (15 minutes), used for API requests
+  - **Refresh Token**: Long-lived (7 days), used to obtain new access tokens
+- Tokens contain user ID as principal
+- Spring Security validates tokens on each request
 
-### CORS Settings (SecurityConfig.java:57-78)
+**Configuration:**
+```yaml
+spring:
+  jwt:
+    secret: ${JWT_SECRET}
+    accessTokenExpiration: 900    # 15 minutes
+    refreshTokenExpiration: 604800 # 7 days
+```
 
-- **Allowed Origin**: `http://localhost:5173` (React/Vite dev server)
-- **Allowed Methods**: GET, POST, PUT, DELETE, OPTIONS
-- **Allowed Headers**: All (including Authorization)
-- **Credentials**: Enabled (required for cookies)
-- **Max Age**: 3600s (1 hour preflight cache)
+### 2. User Management
 
-### Modular Security Rules
+**Location:** `com.codewithmosh.store.users`
 
-Each domain module can define its own access rules by implementing `SecurityRules` interface:
+**Key Features:**
+- User registration with validation
+- Email and username uniqueness enforcement
+- Soft delete (preserves data, sets deletedAt timestamp)
+- Role management (add/remove roles)
+- Audit logging for role changes
+- Password change with confirmation
 
+**Security Rules:**
+- **GET /users**: Admin only
+- **GET /users/{id}**: Authenticated users (can view any user)
+- **POST /users** (register): Public
+- **PUT /users/{id}**: Self or admin
+- **DELETE /users/{id}**: Admin only (cannot delete self or last admin)
+- **POST /users/{id}/change-password**: Self only
+- **POST /users/{id}/roles**: Admin only
+- **DELETE /users/{id}/roles**: Admin only (cannot remove own admin role)
+- **GET /users/{id}/roles**: Admin only
+
+### 3. Password Security
+
+**Location:** `com.codewithmosh.store.common.validation`, `com.codewithmosh.store.common.config`
+
+**Configuration-Based Validation:**
+- Custom `@ValidPassword` annotation
+- `PasswordValidator` constraint validator with Spring DI
+- `PasswordPolicy` configuration class with `@ConfigurationProperties`
+- Centralized rules in `application.yaml`
+
+**Current Policy:**
+```yaml
+app:
+  security:
+    password:
+      min-length: 8
+      max-length: 128
+      require-uppercase: true
+      require-lowercase: true
+      require-digit: true
+      require-special-char: true
+```
+
+**Usage:**
+```java
+@NotBlank(message = "Password is required")
+@ValidPassword
+private String password;
+```
+
+### 4. Role-Based Access Control
+
+**Implementation:**
+- Roles stored as `Set<String>` in User entity
+- Two primary roles: `USER`, `ADMIN`
+- Default role: `USER` (assigned on registration)
+- Method-level security with `@PreAuthorize("hasRole('ADMIN')")`
+- Modular security rules with `SecurityRules` interface
+
+**Authorization Patterns:**
+
+*Option 1: SecurityRules interface (modular, reusable)*
 ```java
 @Component
-public class CartSecurityRules implements SecurityRules {
+public class AdminSecurityRules implements SecurityRules {
     @Override
-    public void configure(AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry c) {
-        // Define cart-specific security rules
+    public void configure(AuthorizationManagerRequestMatcherRegistry registry) {
+        registry.requestMatchers("/admin/**").hasRole("ADMIN");
     }
 }
 ```
 
-All rules are automatically collected and applied in `SecurityConfig.java:97`.
-
-### Role-Based Authorization
-
-- Roles stored in JWT claims
-- Spring Security uses `ROLE_` prefix automatically
-- User roles: `CUSTOMER`, `ADMIN` (defined in User entity)
-
-## Stripe Payment Integration
-
-### Checkout Flow
-
-1. **Create Checkout Session** (`POST /checkout`)
-   - Client sends cart/order details
-   - Server creates Stripe checkout session
-   - Returns checkout URL for Stripe hosted page
-   - Order ID metadata is attached to payment
-
-2. **User Completes Payment** (Stripe hosted page)
-
-3. **Webhook Notification** (`POST /checkout/webhook`)
-   - Stripe sends payment result
-   - Server verifies webhook signature
-   - Updates order status in database
-
-### Configuration
-
-**Environment Variables Required** (application.yaml:19-21):
-- `STRIPE_SECRET_KEY`: Stripe API key
-- `STRIPE_WEBHOOK_SECRET_KEY`: Webhook signing secret
-
-### Error Handling
-
-Checkout process handles these exceptions (README.md:11-15):
-- Invalid API Key
-- Network Issues
-- Bad Requests (e.g., negative amounts)
-- Stripe service outages
-
-On error: Order is deleted from database to prevent bad data, exception passed to controller.
-
-### Testing with Stripe CLI
-
-```bash
-# 1. Install and login
-stripe login
-
-# 2. Forward webhooks to local server
-stripe listen --forward-to http://localhost:8080/checkout/webhook
-
-# 3. Trigger test events
-stripe trigger payment_intent.succeeded
-stripe trigger payment_intent.succeeded --add "payment_intent:metadata[order_id]=1"
+*Option 2: @PreAuthorize annotation (method-level, explicit)*
+```java
+@PreAuthorize("hasRole('ADMIN')")
+public UserDto addRole(@PathVariable Long id, @RequestBody AddRoleRequest request) {
+    return userService.addRole(id, request);
+}
 ```
 
-**Important**: Keep Stripe SDK and API versions in sync to avoid deserialization errors (README.md:42-45).
+**When to use which:**
+- Use `SecurityRules` for URL patterns, public endpoints, authentication config
+- Use `@PreAuthorize` for fine-grained method-level authorization
+- `@PreAuthorize` returns 403 Forbidden (correct for authorization failures)
+- Missing authentication returns 401 Unauthorized
 
-### Recent Fixes
+### 5. Soft Delete Pattern
 
-- Order ID metadata bug fixed in `StripePaymentGateway` (commit: 0482826)
+**Implementation:**
+- `deletedAt` timestamp field in User entity (nullable)
+- Non-deleted users: `deletedAt = NULL`
+- Deleted users: `deletedAt = <timestamp>` AND `enabled = false`
+- JPA repository methods overridden with `@Query` to filter deleted users
 
-## Development Setup
+**Example:**
+```java
+@Query("SELECT u FROM User u WHERE u.id = :id AND u.deletedAt IS NULL")
+Optional<User> findById(@Param("id") Long id);
 
-### Prerequisites
-
-- Java 21
-- Maven 3.x (or use `./mvnw`)
-- MySQL 8.x running locally
-- Stripe CLI (for webhook testing)
-
-### Environment Variables
-
-Create a `.env` file (see `.env.example`):
-```bash
-JWT_SECRET=your-secret-key-here
-STRIPE_SECRET_KEY=sk_test_...
-STRIPE_WEBHOOK_SECRET_KEY=whsec_...
+@Query("SELECT u FROM User u WHERE u.deletedAt IS NULL")
+List<User> findAll(Sort sort);
 ```
 
-### Build and Run
+**Benefits:**
+- Preserves data for audit/compliance
+- Maintains referential integrity
+- Enables "undelete" functionality (future feature)
+- Supports analytics on historical data
+
+### 6. Database Migrations
+
+**Location:** `src/main/resources/db/migration`
+
+**Current Migrations:**
+- V1: Initial schema (users, roles)
+- V2-V8: Various enhancements
+- V9: Add `deleted_at` column with index
+
+**Flyway Configuration:**
+- Runs automatically on application startup
+- Version-controlled schema changes
+- Never modify existing migrations (create new ones)
+
+## Recent Enhancements
+
+### Password Security & Validation (Completed)
+
+**What was done:**
+1. Created configuration-based password validation system
+2. Fixed CRITICAL security bug in change password endpoint (passwords were stored in plaintext!)
+3. Added authorization checks (users can only change own password)
+4. Added password confirmation validation
+5. Centralized password rules in `application.yaml`
+
+**Files changed:**
+- Created: `PasswordPolicy.java`, `ValidPassword.java`, `PasswordValidator.java`
+- Modified: `application.yaml`, `RegisterUserRequest.java`, `ChangePasswordRequest.java`
+- Modified: `UserService.changePassword()`, `UserController.changePassword()`
+
+### User Management Security (Completed)
+
+**What was done:**
+1. Added authorization to PUT /users/{id} (self or admin)
+2. Added authorization to DELETE /users/{id} (admin only)
+3. Added email/username uniqueness validation on updates
+4. Prevented self-deletion by admins
+5. Prevented deletion of last admin user
+6. Added `countByRolesContaining` to UserRepository
+
+**Files changed:**
+- Modified: `UserService.updateUser()`, `UserService.deleteUser()`
+- Modified: `UserController.updateUser()`, `UserController.deleteUser()`
+- Modified: `UserRepository.java`
+- Modified: `DuplicateUserException.java` (added custom message constructor)
+
+### Soft Delete Implementation (Completed)
+
+**What was done:**
+1. Added `deletedAt` timestamp field to User entity
+2. Created Flyway migration V9 with index
+3. Overrode JPA repository methods to filter soft-deleted users
+4. Changed delete logic to set timestamp and disable account
+
+**Files changed:**
+- Modified: `User.java` (added deletedAt field)
+- Created: `V9__add_deleted_at_to_users.sql`
+- Modified: `UserRepository.java` (added @Query overrides)
+- Modified: `UserService.deleteUser()` (soft delete logic)
+
+### Security Rules Starter (Completed)
+
+**What was done:**
+1. Created `security-rules-starter` module in krd-spring-starters
+2. Implemented `SecurityRules` interface for modular security configuration
+3. Created auto-configuration for Spring Boot
+4. Published to Maven local (v1.0.0)
+5. Integrated into spring-api-with-krd-starters
+
+**Files created:**
+- `SecurityRules.java` (core interface)
+- `SecurityRulesAutoConfiguration.java`
+- Auto-configuration imports file
+- Module build.gradle
+
+## Future Enhancements
+
+### OAuth 2.0 Integration (Planned)
+
+**See:** `docs/OAUTH_AND_AUTH0.md` for detailed analysis
+
+**What it is:**
+- Authorization framework for delegated access
+- Allows "Sign in with Google/GitHub" functionality
+- Industry standard for third-party authentication
+
+**When to consider:**
+- Need social login (Google, Facebook, GitHub, etc.)
+- Building multi-tenant applications
+- Want to delegate user management to identity provider
+
+**Implementation approach:**
+- Add spring-boot-starter-oauth2-client dependency
+- Configure OAuth2 providers in application.yaml
+- Update security configuration
+- Potentially keep JWT for API-to-API communication
+
+### Auth0 Migration (Planned)
+
+**See:** `docs/OAUTH_AND_AUTH0.md` for detailed analysis
+
+**What it is:**
+- Authentication-as-a-Service (managed identity platform)
+- Provides hosted login pages, user management, MFA
+- Alternative to building custom authentication
+
+**When to consider:**
+- Want to outsource authentication infrastructure
+- Need enterprise features (SSO, MFA, advanced security)
+- Prefer managed service over DIY approach
+
+**Trade-offs:**
+- **Pros**: Less code to maintain, enterprise features, security updates handled
+- **Cons**: Vendor lock-in, monthly costs, less control
+
+**Competitors:**
+- Okta (enterprise-focused)
+- Firebase Authentication (Google, developer-friendly)
+- AWS Cognito (AWS ecosystem)
+- Azure AD B2C (Microsoft ecosystem)
+
+## Common Development Patterns
+
+### Adding a New Endpoint
+
+1. Create/update DTO classes with validation annotations
+2. Add method to Service class with business logic
+3. Add endpoint to Controller with `@PreAuthorize` if needed
+4. Update SecurityRules if URL-pattern security needed
+5. Test manually and write unit/integration tests
+6. Commit with descriptive message
+
+### Adding a Database Column
+
+1. Modify Entity class (add field with JPA annotations)
+2. Create new Flyway migration (V{next}__description.sql)
+3. Test migration with `./gradlew flywayMigrate` or app restart
+4. Update DTOs and mappers if needed
+5. Commit migration and code changes together
+
+### Adding Password/User Validation
+
+1. Add validation rules to PasswordPolicy (if password-related)
+2. Update application.yaml with new configuration
+3. Use existing `@ValidPassword` or create new custom annotation
+4. Add validation logic to Service layer if complex business rules
+5. Test with invalid/valid inputs
+6. Commit with description of new validation rules
+
+## Working with Claude
+
+### Best Practices
+
+1. **Read Before Modify**: Always ask Claude to read existing files before making changes
+2. **Incremental Changes**: Make changes in logical steps, commit at stopping points
+3. **Explain Context**: Reference this document when starting new sessions
+4. **Review Before Commit**: Review all changes before creating commits
+5. **Ask Questions**: If approach is unclear, ask Claude to explain options first
+
+### Useful Prompts
+
+**Understanding Code:**
+- "Explain how the JWT authentication flow works in this project"
+- "What security checks are in place for the DELETE /users/{id} endpoint?"
+- "How does the soft delete pattern work in the User repository?"
+
+**Making Changes:**
+- "Add email verification to the user registration flow"
+- "Implement rate limiting for authentication endpoints"
+- "Add pagination to the GET /users endpoint"
+
+**Refactoring:**
+- "Look at the UserService class and suggest improvements"
+- "Is there duplicate code that could be extracted into a utility?"
+- "Should this validation be in the controller or service layer?"
+
+**Planning:**
+- "What's the best approach to add password reset functionality?"
+- "How should I structure a new payment module?"
+- "What security considerations are needed for an admin dashboard?"
+
+### Common Requests
+
+**Create descriptive commits:**
+"Let's create some commits with descriptions of what was changed."
+
+**Start new feature:**
+"Let's work on adding [feature]. First, let me understand the current implementation by reading [relevant files]."
+
+**Improve existing endpoint:**
+"Let's take a look at the [endpoint]. How can this be improved for security/validation/error handling?"
+
+**Fix build errors:**
+"The build is failing with [error]. Let's investigate and fix it."
+
+## Quick Reference
+
+### Build & Run
 
 ```bash
-# Build the project
-./mvnw clean install
-
-# Run tests
-./mvnw test
+# Build the application
+./gradlew build
 
 # Run the application
-./mvnw spring-boot:run
+./gradlew bootRun
 
-# Or run with specific profile
-./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
+# Run tests
+./gradlew test
+
+# Clean build
+./gradlew clean build
 ```
 
-The API will be available at `http://localhost:8080`
+### Database Migrations
 
-### Database Setup
+```bash
+# Run migrations
+./gradlew flywayMigrate
 
-1. Ensure MySQL is running on `localhost:3306`
-2. Database `store_api` will be created automatically
-3. Flyway runs all migrations on startup
-4. Check logs for migration status
+# Check migration status
+./gradlew flywayInfo
 
-### Swagger Documentation
-
-Access interactive API docs at: `http://localhost:8080/swagger-ui.html`
-
-All controllers are tagged for organization:
-- Auth
-- Products
-- Carts
-- Orders
-- Checkout
-
-## Coding Standards
-
-### Naming Conventions
-
-- **Classes**: PascalCase (e.g., `OrderController`, `PaymentService`)
-- **Methods**: camelCase (e.g., `processPayment`, `getUserCart`)
-- **Constants**: UPPER_SNAKE_CASE
-- **Packages**: `com.codewithmosh.store.{domain}`
-
-### Code Style
-
-- Use Lombok annotations to reduce boilerplate (`@AllArgsConstructor`, `@Data`, etc.)
-- Constructor injection preferred over field injection
-- Add Swagger `@Tag` annotations to all controllers
-- Keep controllers thin - business logic belongs in services
-- Use MapStruct for entity/DTO conversions
-- Validate request DTOs with Jakarta Validation (`@Valid`)
-
-### Exception Handling
-
-- Domain-specific exceptions (e.g., `CartNotFoundException`, `PaymentException`)
-- `@ExceptionHandler` methods in controllers for clean error responses
-- Return appropriate HTTP status codes (400 for bad requests, 401 for auth failures, etc.)
-
-## Common Tasks
-
-### Add a New REST Endpoint
-
-1. Create request/response DTOs in appropriate package
-2. Add controller method with proper annotations:
-```java
-@RestController
-@RequestMapping("/api/items")
-@Tag(name = "Items")
-public class ItemController {
-    @GetMapping("/{id}")
-    public ResponseEntity<ItemDto> getItem(@PathVariable Long id) {
-        // implementation
-    }
-}
-```
-3. Implement service layer logic
-4. Add repository methods if needed
-5. Define security rules if needed
-6. Add unit tests
-7. Test via Swagger UI
-
-### Add Security Rules for a New Module
-
-1. Create a class implementing `SecurityRules`:
-```java
-@Component
-public class MyModuleSecurityRules implements SecurityRules {
-    @Override
-    public void configure(AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry c) {
-        c.requestMatchers(HttpMethod.GET, "/api/mymodule/**").permitAll();
-        c.requestMatchers(HttpMethod.POST, "/api/mymodule/**").authenticated();
-    }
-}
-```
-2. Spring automatically picks it up and applies rules in `SecurityConfig`
-
-### Create a Database Migration
-
-1. Create file: `src/main/resources/db/migration/V{N}__description.sql`
-2. Write SQL DDL/DML
-3. Restart application - Flyway runs migration automatically
-4. Check logs to confirm success
-
-### Process a Payment
-
-```java
-// Service layer
-StripePaymentGateway gateway = new StripePaymentGateway(stripeApiKey);
-PaymentResult result = gateway.processPayment(amount, orderId);
-// Order ID metadata is automatically included
+# Repair migration history (use carefully)
+./gradlew flywayRepair
 ```
 
-## Important Notes & Gotchas
+### Publishing Starters (krd-spring-starters)
 
-### Security Concerns
+```bash
+# Publish to Maven local
+./gradlew publishToMavenLocal
 
-1. **Database Password Exposed**: `application-dev.yaml` contains plaintext password - move to environment variables
-2. **CORS Origin**: Currently hardcoded to `localhost:5173` - should be configurable per environment
-3. **Cookie Secure Flag**: Enabled in production but may cause issues in local development without HTTPS
-
-### Known Issues
-
-- Stripe SDK version must match API version to avoid deserialization errors
-- JPA shows SQL in dev mode (`show-sql: true`) - disable in production for performance
-- Recent fix for order ID metadata in Stripe payments (commit 0482826)
+# Check dependencies
+./gradlew dependencies
+```
 
 ### Git Workflow
 
-- **Current branch**: `gradle-migration` (migrating from Maven to Gradle)
-- **Main development work**: Most recent commits on this branch
-- Always run tests before committing
-- Check `.gitignore` before committing - ensure `.env` is excluded
-
-### Recent Changes
-
-1. **Fix order ID metadata bug** in StripePaymentGateway (commit: 0482826)
-2. **Modularize Security Rules** and configure CORS (commit: 1abc85f)
-3. **Add controller tags** for Swagger documentation (commit: 55f34e4)
-4. **Update local DB password** and security rules (commit: 96e8479)
-5. **Add Flyway migration** for database population (commit: 824bfb5)
-
-## Testing
-
-### Manual Testing
-
-1. Start application
-2. Navigate to Swagger UI: `http://localhost:8080/swagger-ui.html`
-3. Test authentication:
-   - POST `/auth/login` with test credentials
-   - Copy access token from response
-   - Click "Authorize" button, enter `Bearer <token>`
-4. Test protected endpoints
-
-### Stripe Testing
-
-1. Start Stripe CLI listener:
 ```bash
-stripe listen --forward-to http://localhost:8080/checkout/webhook
-```
-2. Use Stripe test card: `4242 4242 4242 4242`
-3. Trigger test events:
-```bash
-stripe trigger payment_intent.succeeded
+# Create feature branch
+git checkout -b feature/descriptive-name
+
+# Make changes, then commit
+git add .
+git commit -m "Descriptive commit message"
+
+# Merge to main
+git checkout main
+git merge feature/descriptive-name
+
+# Push to GitHub
+git push origin main
+
+# Delete feature branch (optional)
+git branch -d feature/descriptive-name
 ```
 
-## Frontend Integration
+## Troubleshooting
 
-**Frontend URL**: `http://localhost:5173` (configured in CORS and `application-dev.yaml:10`)
+### Build Failures
 
-### Authentication Flow (Client Side)
+**Gradle dependency resolution errors:**
+- Run `./gradlew clean build --refresh-dependencies`
+- Check that custom starters are published: `./gradlew publishToMavenLocal` in krd-spring-starters
 
-1. **Login**: POST to `/auth/login` with credentials
-   - Store access token in memory (not localStorage - security risk)
-   - Refresh token automatically stored in cookie
+**Flyway migration errors:**
+- Check that database is running and accessible
+- Verify migration files are in correct location
+- Use `./gradlew flywayInfo` to check migration status
 
-2. **API Calls**: Include header `Authorization: Bearer <access-token>`
+### Runtime Issues
 
-3. **Token Refresh**: POST to `/auth/refresh`
-   - Cookie sent automatically
-   - Update in-memory access token
+**JWT validation failures:**
+- Check that JWT_SECRET environment variable is set
+- Verify token hasn't expired (check expiration times in application.yaml)
+- Confirm token format is correct (Bearer <token>)
 
-4. **Get Current User**: GET `/auth/me` to fetch logged-in user details
+**Authorization returning 401 instead of 403:**
+- Ensure user is authenticated (valid JWT token)
+- 401 = not authenticated, 403 = authenticated but not authorized
+- Check that Spring Security is processing authentication before authorization
 
-## Reference Documentation
+**Soft-deleted users still appearing:**
+- Verify @Query annotations include `AND u.deletedAt IS NULL`
+- Check that repository method is actually using the overridden version
+- Test with `userRepository.findAll()` directly
 
-- [Spring Boot](https://spring.io/projects/spring-boot)
-- [Spring Security](https://spring.io/projects/spring-security)
-- [Flyway](https://flywaydb.org/documentation/)
-- [Stripe API](https://stripe.com/docs/api)
-- [Stripe CLI](https://docs.stripe.com/stripe-cli)
-- [JJWT (JWT Library)](https://github.com/jwtk/jjwt)
-- [MapStruct](https://mapstruct.org/)
+## Important Notes
 
-## Useful Commands
+### Security Considerations
 
-```bash
-# Build
-./mvnw clean install
+- **NEVER commit secrets** (.env files, JWT_SECRET, API keys)
+- **Always hash passwords** with BCrypt before storing
+- **Validate all user input** at controller and service layers
+- **Use @Valid annotation** for DTO validation
+- **Log security events** (role changes, failed auth attempts)
+- **Follow principle of least privilege** (minimum necessary permissions)
 
-# Run tests
-./mvnw test
+### Code Quality
 
-# Run application
-./mvnw spring-boot:run
+- **Avoid over-engineering**: Only add complexity when needed
+- **Don't add features not requested**: Stay focused on requirements
+- **Keep solutions simple**: Prefer clarity over cleverness
+- **Don't add comments** unless logic is truly complex
+- **Delete unused code**: Don't comment out or leave "removed" markers
 
-# Run with specific profile
-./mvnw spring-boot:run -Dspring-boot.run.profiles=prod
+### Testing
 
-# Package as JAR
-./mvnw package
+- Test security rules thoroughly (both positive and negative cases)
+- Verify authorization at method and URL pattern levels
+- Test edge cases (last admin, self-deletion, etc.)
+- Validate error messages are user-friendly but not revealing sensitive info
 
-# Stripe CLI
-stripe listen --forward-to http://localhost:8080/checkout/webhook
-stripe trigger payment_intent.succeeded
+## Related Documentation
 
-# MySQL
-mysql -u root -p
-USE store_api;
-SHOW TABLES;
-```
+- **OAuth & Auth0 Analysis**: `docs/OAUTH_AND_AUTH0.md`
+- **JWT Auth Starter**: `~/MyDev/Spring_Starters/jwt-auth-starter/`
+- **Security Rules Starter**: `~/MyDev/Spring_Starters/krd-spring-starters/security-rules-starter/`
+
+---
+
+**Last Updated**: 2025-01-25
+
+This document should be updated whenever significant architectural changes are made or new patterns are established.
