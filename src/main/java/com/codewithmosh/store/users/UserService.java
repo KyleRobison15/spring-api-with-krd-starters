@@ -103,7 +103,10 @@ public class UserService {
             }
         }
 
-        userRepository.delete(userToDelete);
+        // Soft delete: Mark as deleted and disable account
+        userToDelete.setDeletedAt(LocalDateTime.now());
+        userToDelete.setEnabled(false);
+        userRepository.save(userToDelete);
     }
 
     public void changePassword(Long userId, ChangePasswordRequest request) {
