@@ -43,7 +43,7 @@ public class UserService {
         // Only check for duplicate username if one is provided
         if (request.getUsername() != null && !request.getUsername().isBlank()
             && userRepository.existsByUsername(request.getUsername())){
-            throw new DuplicateUserException();
+            throw new DuplicateUserException("A user with this username already exists");
         }
 
         User user = userMapper.toEntity(request);
@@ -110,13 +110,27 @@ public class UserService {
     }
 
     public void changePassword(Long userId, ChangePasswordRequest request) {
-        var user = userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
+        var currentUserId = getCurrentUserId();
 
-        if (!passwordEncoder.matches(request.getOldPassword(), user.getPassword())) {
-            throw new AccessDeniedException("Password does not match");
+        // Authorization: Users can only change their own password
+        if (!userId.equals(currentUserId)) {
+            throw new AccessDeniedException("You can only change your own password");
         }
 
-        user.setPassword(request.getNewPassword());
+        var user = userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
+
+        // Verify current password
+        if (!passwordEncoder.matches(request.getOldPassword(), user.getPassword())) {
+            throw new IllegalArgumentException("Current password is incorrect");
+        }
+
+        // Validate new password matches confirmation
+        if (!request.getNewPassword().equals(request.getConfirmPassword())) {
+            throw new IllegalArgumentException("New password and confirmation do not match");
+        }
+
+        // Hash the new password before storing (CRITICAL)
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(user);
     }
 

@@ -55,8 +55,9 @@ public class UserController {
     }
 
     @PostMapping("/{id}/change-password")
-    public void changePassword(@PathVariable Long id, @RequestBody ChangePasswordRequest request) {
+    public ResponseEntity<Void> changePassword(@PathVariable Long id, @Valid @RequestBody ChangePasswordRequest request) {
         userService.changePassword(id, request);
+        return ResponseEntity.noContent().build();
     }
 
     /**

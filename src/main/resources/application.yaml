@@ -19,3 +19,19 @@ spring:
 stripe:
   secretKey: ${STRIPE_SECRET_KEY}
   webhookSecretKey: ${STRIPE_WEBHOOK_SECRET_KEY}
+
+app:
+  security:
+    password:
+      # Minimum password length (NIST recommends at least 8)
+      min-length: 8
+      # Maximum password length (prevents DoS attacks, allows passphrases)
+      max-length: 128
+      # Require at least one uppercase letter
+      require-uppercase: true
+      # Require at least one lowercase letter
+      require-lowercase: true
+      # Require at least one digit
+      require-digit: true
+      # Require at least one special character
+      require-special-char: true
