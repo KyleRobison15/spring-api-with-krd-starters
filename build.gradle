@@ -48,6 +48,9 @@ dependencies {
 	// JWT Auth Starter
 	implementation 'com.krd:jwt-auth-starter:1.0.0'
 
+	// Security Rules Starter
+	implementation 'com.krd:security-rules-starter:1.0.0'
+
 	// Thymeleaf Security Integration
 	implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity6'
 
