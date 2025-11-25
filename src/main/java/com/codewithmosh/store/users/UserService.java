@@ -56,16 +56,54 @@ public class UserService {
 
 
     public UserDto updateUser(Long userId, UpdateUserRequest request) {
-        var user = userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
-        userMapper.update(request, user);
-        userRepository.save(user);
+        var currentUserId = getCurrentUserId();
+        var currentUser = userRepository.findById(currentUserId).orElseThrow();
+        var targetUser = userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
 
-        return userMapper.toDto(user);
+        // Authorization: Users can update themselves, admins can update anyone
+        boolean isAdmin = currentUser.getRoles().contains("ADMIN");
+        if (!userId.equals(currentUserId) && !isAdmin) {
+            throw new AccessDeniedException("You can only update your own profile");
+        }
+
+        // Validate email uniqueness if changed
+        if (request.getEmail() != null && !request.getEmail().equals(targetUser.getEmail())) {
+            if (userRepository.existsByEmail(request.getEmail())) {
+                throw new DuplicateUserException("Email already in use");
+            }
+        }
+
+        // Validate username uniqueness if changed
+        if (request.getUsername() != null && !request.getUsername().equals(targetUser.getUsername())) {
+            if (userRepository.existsByUsername(request.getUsername())) {
+                throw new DuplicateUserException("Username already in use");
+            }
+        }
+
+        userMapper.update(request, targetUser);
+        userRepository.save(targetUser);
+
+        return userMapper.toDto(targetUser);
     }
 
     public void deleteUser(Long userId) {
-        var user = userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
-        userRepository.delete(user);
+        var currentUserId = getCurrentUserId();
+        var userToDelete = userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
+
+        // Prevent self-deletion by admin
+        if (userId.equals(currentUserId)) {
+            throw new AccessDeniedException("Admins cannot delete their own account");
+        }
+
+        // Prevent deleting the last admin
+        if (userToDelete.getRoles().contains("ADMIN")) {
+            long adminCount = userRepository.countByRolesContaining("ADMIN");
+            if (adminCount <= 1) {
+                throw new IllegalStateException("Cannot delete the last admin user. There must always be at least one admin.");
+            }
+        }
+
+        userRepository.delete(userToDelete);
     }
 
     public void changePassword(Long userId, ChangePasswordRequest request) {
