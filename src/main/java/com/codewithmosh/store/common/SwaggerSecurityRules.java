@@ -1,5 +1,6 @@
 package com.codewithmosh.store.common;
 
+import com.krd.security.SecurityRules;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AuthorizeHttpRequestsConfigurer;
 import org.springframework.stereotype.Component;

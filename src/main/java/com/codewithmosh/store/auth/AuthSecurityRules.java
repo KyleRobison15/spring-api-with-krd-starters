@@ -1,6 +1,6 @@
 package com.codewithmosh.store.auth;
 
-import com.codewithmosh.store.common.SecurityRules;
+import com.krd.security.SecurityRules;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AuthorizeHttpRequestsConfigurer;
