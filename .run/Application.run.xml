@@ -1,7 +1,7 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="Application" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot">
     <module name="spring-api-with-krd-starters.main" />
-    <option name="SPRING_BOOT_MAIN_CLASS" value="com.codewithmosh.store.StoreApplication" />
+    <option name="SPRING_BOOT_MAIN_CLASS" value="com.krd.store.StoreApplication" />
     <method v="2">
       <option name="Make" enabled="true" />
     </method>

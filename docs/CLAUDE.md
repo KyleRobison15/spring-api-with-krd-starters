@@ -129,7 +129,7 @@ Fix critical security vulnerabilities in change password endpoint
 
 ### 1. Authentication System
 
-**Location:** `com.codewithmosh.store.auth`
+**Location:** `com.krd.store.auth`
 
 **How it works:**
 - Users authenticate with email/password
@@ -150,7 +150,7 @@ spring:
 
 ### 2. User Management
 
-**Location:** `com.codewithmosh.store.users`
+**Location:** `com.krd.store.users`
 
 **Key Features:**
 - User registration with validation
@@ -173,7 +173,7 @@ spring:
 
 ### 3. Password Security
 
-**Location:** `com.codewithmosh.store.common.validation`, `com.codewithmosh.store.common.config`
+**Location:** `com.krd.store.common.validation`, `com.krd.store.common.config`
 
 **Configuration-Based Validation:**
 - Custom `@ValidPassword` annotation
