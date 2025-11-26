@@ -1,21 +1,19 @@
 package com.krd.store.users;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
+import com.krd.starter.user.dto.BaseUserDto;
 import lombok.Getter;
+import lombok.experimental.SuperBuilder;
 
-import java.util.Set;
-
-@AllArgsConstructor
+/**
+ * DTO for User entity.
+ * <p>
+ * Extends BaseUserDto which provides: id, firstName, lastName, username, email, roles, enabled
+ * <p>
+ * Add domain-specific fields here if needed.
+ */
 @Getter
-@Builder
-public class UserDto {
-    private Long id;
-    private String firstName;
-    private String lastName;
-    private String username;
-    private String email;
-    private Set<String> roles;
-    private boolean enabled;
-
+@SuperBuilder
+public class UserDto extends BaseUserDto {
+    // Base fields (id, firstName, lastName, username, email, roles, enabled) are inherited
+    // Add domain-specific fields here if needed (e.g., orderCount, addressCount)
 }

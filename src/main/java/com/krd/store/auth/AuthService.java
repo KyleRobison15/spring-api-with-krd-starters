@@ -2,8 +2,8 @@ package com.krd.store.auth;
 
 import com.krd.store.users.User;
 import com.krd.store.users.UserRepository;
-import com.krd.auth.Jwt;
-import com.krd.auth.JwtService;
+import com.krd.starter.jwt.Jwt;
+import com.krd.starter.jwt.JwtService;
 import lombok.AllArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;

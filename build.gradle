@@ -37,34 +37,24 @@ repositories {
 }
 
 dependencies {
-	// Spring Boot Starters
-	implementation 'org.springframework.boot:spring-boot-starter'
-	implementation 'org.springframework.boot:spring-boot-starter-web'
-	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-	implementation 'org.springframework.boot:spring-boot-starter-validation'
-	implementation 'org.springframework.boot:spring-boot-starter-security'
-	implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
+	// Spring API Starter (includes web, security, data-jpa, validation, jwt, user management)
+	implementation 'com.krd:spring-api-starter:1.0.0'
 
-	// JWT Auth Starter
-	implementation 'com.krd:jwt-auth-starter:1.0.0'
+	// Thymeleaf (domain-specific for this app)
+	implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
+	implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity6'
 
 	// Security Rules Starter
 	implementation 'com.krd:security-rules-starter:1.0.0'
 
-	// Thymeleaf Security Integration
-	implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity6'
-
 	// Database
 	runtimeOnly 'com.mysql:mysql-connector-j'
-	implementation 'org.flywaydb:flyway-core'
-	implementation 'org.flywaydb:flyway-mysql'
 
 	// Lombok
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
 
-	// MapStruct
-	implementation 'org.mapstruct:mapstruct:1.6.2'
+	// MapStruct (needed for app-specific mappers, starter provides base)
 	annotationProcessor 'org.mapstruct:mapstruct-processor:1.6.3'
 
 	// API Documentation

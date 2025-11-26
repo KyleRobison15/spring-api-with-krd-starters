@@ -1,6 +1,6 @@
 package com.krd.store.users;
 
-import com.krd.store.common.validation.ValidPassword;
+import com.krd.starter.validation.ValidPassword;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 

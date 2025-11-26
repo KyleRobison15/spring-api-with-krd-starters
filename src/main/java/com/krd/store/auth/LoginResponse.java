@@ -1,6 +1,6 @@
 package com.krd.store.auth;
 
-import com.krd.auth.Jwt;
+import com.krd.starter.jwt.Jwt;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 

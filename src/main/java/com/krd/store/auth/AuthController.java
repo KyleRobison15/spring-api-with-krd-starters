@@ -2,7 +2,7 @@ package com.krd.store.auth;
 
 import com.krd.store.users.UserDto;
 import com.krd.store.users.UserMapper;
-import com.krd.auth.JwtConfig;
+import com.krd.starter.jwt.JwtConfig;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
