@@ -1,7 +1,8 @@
 package com.krd.store.orders;
 
+import com.krd.starter.payment.models.OrderInfo;
+import com.krd.starter.payment.models.PaymentStatus;
 import com.krd.store.carts.Cart;
-import com.krd.store.payments.PaymentStauts;
 import com.krd.store.users.User;
 import jakarta.persistence.*;
 import lombok.*;
@@ -9,14 +10,16 @@ import lombok.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 
 @Getter
 @Setter
 @Entity
 @Table(name = "orders")
-public class Order {
+public class Order implements OrderInfo {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
@@ -29,7 +32,7 @@ public class Order {
 
     @Column(name = "status")
     @Enumerated(EnumType.STRING)
-    private PaymentStauts status;
+    private PaymentStatus status;
 
     @Column(name = "created_at", insertable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -43,7 +46,7 @@ public class Order {
     public static Order fromCart(Cart cart, User customer) {
         var order = new Order();
         order.setCustomer(customer);
-        order.setStatus(PaymentStauts.PENDING);
+        order.setStatus(PaymentStatus.PENDING);
         order.setTotalPrice(cart.getTotalPrice());
 
         cart.getItems().forEach(item -> {
@@ -58,4 +61,20 @@ public class Order {
         return this.customer.equals(customer);
     }
 
+    // Implement OrderInfo interface methods
+    @Override
+    public Long getOrderId() {
+        return this.id;
+    }
+
+    @Override
+    public List<LineItem> getLineItems() {
+        return items.stream()
+                .map(item -> new LineItem(
+                        item.getProduct().getName(),
+                        item.getUnitPrice(),
+                        item.getQuantity()
+                ))
+                .collect(Collectors.toList());
+    }
 }
